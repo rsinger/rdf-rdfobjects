@@ -1,0 +1,64 @@
+RDF-RDFObjects: An Object Based Interface for RDF.rb.
+
+Usage:
+    
+    require 'rdf/rdfobjects'
+    
+    require 'rdf/ntriples'
+
+    graph = RDF::Graph.load("http://rdf.rubyforge.org/doap.nt")
+    
+    rdf = graph['http://rubygems.org/gems/rdf']
+    => #<RDF::URI:0x8143aba8(http://rubygems.org/gems/rdf)>
+    
+Properties can be accessed either via a hash syntax or dot syntax using RDF::Vocabulary constants:
+
+    rdf[DOAP.name]
+    => [#<RDF::Literal:0x81429c90("RDF.rb")>]
+    
+    rdf.DOAP.documenter
+    => [#<RDF::URI:0x81433254(http://ar.to/#self)>, #<RDF::URI:0x81432764(http://bhuga.net/#ben)>, #<RDF::URI:0x81431be8(http://kellogg-assoc.com/#me)>]
+    
+You can also return all the properties associated with a particular vocabulary:
+
+    rdf.DOAP
+    => {"http://usefulinc.com/ns/doap#maintainer"=>[#<RDF::URI:0x8142beb4(http://ar.to/#self)>, #<RDF::URI:0x8142b3c4(http://bhuga.net/#ben)>, #<RDF::URI:0x8142a848(http://kellogg-assoc.com/#me)>], "http://usefulinc.com/ns/doap#shortdesc"=>[#<RDF::Literal:0x814288cc("A Ruby library for working with Resource Description Framework (RDF) data."@en)>], "http://usefulinc.com/ns/doap#vendor"=>[#<RDF::URI:0x81428228(http://datagraph.org/)>], "http://usefulinc.com/ns/doap#created"=>[#<RDF::Literal:0x81436580("2007-10-23")>], "http://usefulinc.com/ns/doap#documenter"=>[#<RDF::URI:0x81433254(http://ar.to/#self)>, #<RDF::URI:0x81432764(http://bhuga.net/#ben)>, #<RDF::URI:0x81431be8(http://kellogg-assoc.com/#me)>], "http://usefulinc.com/ns/doap#platform"=>[#<RDF::Literal:0x814293bc("Ruby")>], "http://usefulinc.com/ns/doap#category"=>[#<RDF::URI:0x81437b88(http://dbpedia.org/resource/Resource_Description_Framework)>, #<RDF::URI:0x814370fc(http://dbpedia.org/resource/Ruby_(programming_language))>], "http://usefulinc.com/ns/doap#description"=>[#<RDF::Literal:0x81435a90("RDF.rb is a pure-Ruby library for working with Resource Description Framework (RDF) data."@en)>], "http://usefulinc.com/ns/doap#developer"=>[#<RDF::URI:0x814353ec(http://ar.to/#self)>, #<RDF::URI:0x814348fc(http://bhuga.net/#ben)>, #<RDF::URI:0x81433d80(http://kellogg-assoc.com/#me)>], "http://usefulinc.com/ns/doap#download-page"=>[#<RDF::URI:0x814310bc(http://rubyforge.org/projects/rdf/)>], "http://usefulinc.com/ns/doap#license"=>[#<RDF::URI:0x8142c940(http://creativecommons.org/licenses/publicdomain/)>], "http://usefulinc.com/ns/doap#blog"=>[#<RDF::URI:0x81439b90(http://ar.to/)>, #<RDF::URI:0x81439104(http://blog.datagraph.org/)>], "http://usefulinc.com/ns/doap#bug-database"=>[#<RDF::URI:0x81438614(http://github.com/bendiken/rdf/issues)>], "http://usefulinc.com/ns/doap#name"=>[#<RDF::Literal:0x81429c90("RDF.rb")>], "http://usefulinc.com/ns/doap#helper"=>[#<RDF::Node:0x81430630(_:genid1)>, #<RDF::Node:0x8142feec(_:genid2)>, #<RDF::Node:0x8142f7bc(_:genid3)>, #<RDF::Node:0x8142f08c(_:genid4)>, #<RDF::Node:0x8142e95c(_:genid5)>, #<RDF::Node:0x8142e22c(_:genid6)>, #<RDF::Node:0x8142dafc(_:genid7)>], "http://usefulinc.com/ns/doap#homepage"=>[#<RDF::URI:0x8142d3cc(http://rdf.rubyforge.org/)>]}
+    
+Related resources (besides literals) work the same way:
+
+    rdf.DOAP.helper.last.FOAF.name
+    => [#<RDF::Literal:0x8141f754("Pius Uzamere")>]
+
+All changes to properties on resources affect the graph that the resource belongs to.  All properties (even undefined ones) return an ObjectSet Array (which will be empty if the property is undefined).  Passing a Vocabulary reference will return an Assertion Set Hash.  The equals operator will replace all the statements in the graph that match the subject and predicate with the supplied object (or array of objects).
+
+    rdfobjects = graph.create('http://github.com/rsinger/rdf-rdfobjects')
+    => #<RDF::URI:0x8185c9ac(http://github.com/rsinger/rdf-rdfobjects)>
+    
+    rdfobjects.DOAP.maintainer << RDF::URI.new('http://dilettantes.code4lib.org/blog/about-me/#me')
+    => [#<RDF::URI:0x817aeb54(http://dilettantes.code4lib.org/blog/about-me/#me)>]
+
+    rdfobjects.DC.requires << rdf
+    => [#<RDF::URI:0x8143aba8(http://rubygems.org/gems/rdf)>]
+    
+    rdfobjects.DOAP.name
+    => []
+        
+    rdfobjects.DOAP.category = rdf.DOAP.category
+    => [#<RDF::URI:0x81437b88(http://dbpedia.org/resource/Resource_Description_Framework)>, #<RDF::URI:0x814370fc(http://dbpedia.org/resource/Ruby_(programming_language))>]
+    
+    rdfobjects.DOAP.category = rdf.DOAP.category.first
+    => #<RDF::URI:0x81437b88(http://dbpedia.org/resource/Resource_Description_Framework)>
+
+It also provides some convenience methods:
+
+    rdfobjects.predicates
+    => [#<RDF::URI:0x8172f5e8(http://purl.org/dc/terms/requires)>, #<RDF::URI:0x8145ce10(http://usefulinc.com/ns/doap#maintainer)>, #<RDF::URI:0x8146b514(http://usefulinc.com/ns/doap#category)>]
+    
+    rdfobjects.properties
+    => {#<RDF::URI:0x8172f5e8(http://purl.org/dc/terms/requires)>=>[#<RDF::URI:0x8143aba8(http://rubygems.org/gems/rdf)>], #<RDF::URI:0x8145ce10(http://usefulinc.com/ns/doap#maintainer)>=>[#<RDF::URI:0x817aeb54(http://dilettantes.code4lib.org/blog/about-me/#me)>], #<RDF::URI:0x8146b514(http://usefulinc.com/ns/doap#category)>=>[#<RDF::URI:0x81437b88(http://dbpedia.org/resource/Resource_Description_Framework)>]}
+    
+    rdfobjects.to_ntriples
+    => "<http://github.com/rsinger/rdf-rdfobjects> <http://purl.org/dc/terms/requires> <http://rubygems.org/gems/rdf> .\n<http://github.com/rsinger/rdf-rdfobjects> <http://usefulinc.com/ns/doap#maintainer> <http://dilettantes.code4lib.org/blog/about-me/#me> .\n<http://github.com/rsinger/rdf-rdfobjects> <http://usefulinc.com/ns/doap#category> <http://dbpedia.org/resource/Resource_Description_Framework> .\n"
+    
+.to_ntriples is also available on RDF::Graph.
+    
