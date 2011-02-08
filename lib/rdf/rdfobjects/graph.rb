@@ -1,7 +1,7 @@
 module RDF::RDFObjects
   module Graph
-    def create(*args)
-      r = RDF::Resource.new(args)
+    def create(*args, &block)      
+      r = RDF::Resource.new(args.shift, *args, &block)
       r.graph = self
       r
     end
@@ -10,7 +10,7 @@ module RDF::RDFObjects
       id = RDF::Resource.new(id) unless id.is_a?(Resource)
       r = self.first_subject(:subject=>id)
       r = self.first_object(:object=>id) unless r
-      r.graph = self
+      r.graph = self if r
       r
     end
     
@@ -19,6 +19,17 @@ module RDF::RDFObjects
         self.each_statement do |statement|
           writer << statement
         end
+      end
+    end
+    
+    def <<(data)
+      case data
+      when RDF::RDFObjects::Resource
+        data.statements.each do |stmt|
+          self.insert(stmt)
+        end
+      else
+        super(data)
       end
     end
   end      

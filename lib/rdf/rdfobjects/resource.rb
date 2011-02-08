@@ -6,7 +6,7 @@ module RDF::RDFObjects
     end
     
     def assert(p, o)
-      p = RDF::URI.new(p) unless p.is_a?(RDF::URI)
+      p = RDF::URI.intern(p) unless p.is_a?(RDF::URI)
       unless o.is_a?(RDF::Resource) || o.is_a?(RDF::Literal)
         o = RDF::Literal.new(o)
       end
@@ -19,16 +19,31 @@ module RDF::RDFObjects
     end
 
     def [](p)
+      p = RDF::Resource.new(p) if p.is_a?(String)
       results = {}
       if p.is_a?(RDF::Resource)
-        @graph.query(:subject=>self, :predicate=>p).each do |r|
-          if r.object.is_a?(RDF::Resource)
-            r.object.extend(RDF::RDFObjects::Resource)
-            r.object.graph = self.graph
+        if p == RDF.to_rdf
+          regex = Regexp.new(p.to_s)
+          if assertions
+            assertions.each_pair do |pred, objects|
+              results[pred.to_s] = objects if pred.to_s =~ /^#{regex}/
+            end 
           end
-          results[r.predicate] ||=[]
-          results[r.predicate] << r.object
-        end          
+          results.extend(AssertionSet)
+          results.vocabulary = p
+          results.subject = self
+        else          
+          @graph.query(:subject=>self, :predicate=>p).each do |r|
+            if r.object.is_a?(RDF::Resource)
+              unless r.object.frozen?
+                r.object.extend(RDF::RDFObjects::Resource)
+                r.object.graph = self.graph
+              end
+            end
+            results[r.predicate] ||=[]
+            results[r.predicate] << r.object
+          end   
+        end               
       elsif p.is_a?(Class) && p.inspect =~ /^RDF::Vocabulary\(/
         regex = Regexp.new(p.to_s)
         if assertions
@@ -54,11 +69,8 @@ module RDF::RDFObjects
       
       if results.is_a?(AssertionSet)
         results.each_pair do |pred, objs|
-          [*objs].each do |o|
-            next unless o
-            o.extend(ObjectSet)
-            o.set_statement(Statement.new(self, pred, o))
-          end
+          objs.extend(ObjectSet)
+          objs.set_statement(RDF::Statement.new(self, pred, ""))
         end        
         obj_set = results
       else
@@ -66,7 +78,7 @@ module RDF::RDFObjects
         when 0
           set = []
           set.extend(ObjectSet)
-          set.set_statement(Statement.new(self,p,""))
+          set.set_statement(RDF::Statement.new(self,p,""))
           set
         when 1
           set = []
@@ -74,7 +86,7 @@ module RDF::RDFObjects
             set << v
           end
           set.extend(ObjectSet)
-          set.set_statement(Statement.new(self,p,""))
+          set.set_statement(RDF::Statement.new(self,p,""))
           set
         end
       end
@@ -82,7 +94,7 @@ module RDF::RDFObjects
     end
 
     def []=(p,o)      
-      p = RDF::URI.new(p) unless p.is_a?(RDF::URI)
+      p = RDF::URI.intern(p) unless p.is_a?(RDF::URI)
       @graph.query(:subject=>self, :predicate=>p).each {|stmt| @graph.delete(stmt)}    
       [*o].each do |obj|
         next unless obj
@@ -92,7 +104,7 @@ module RDF::RDFObjects
     end
     
     def remove(p, o=nil)
-      p = RDF::URI.new(p) unless p.is_a?(RDF::URI)
+      p = RDF::URI.intern(p) unless p.is_a?(RDF::URI)
       if o
         o = cast_as_typed_object(o)
         @graph.query(:subject=>self, :predicate=>p, :object=>o).each {|stmt| @graph.delete(stmt)}
@@ -102,7 +114,7 @@ module RDF::RDFObjects
     end
 
     def push(p, o)
-      p = RDF::URI.new(p) unless p.is_a?(RDF::URI)
+      p = RDF::URI.intern(p) unless p.is_a?(RDF::URI)
       o = cast_as_typed_object(o)
       @graph << [self, p, o]
     end
@@ -114,16 +126,32 @@ module RDF::RDFObjects
     
     def predicates
       p = []
-      @graph.query(:subject=>self).each {|stmt| p << stmt.predicate unless p.index(stmt.predicate)}
+      @graph.query(:subject=>self).each {|stmt| p << stmt.predicate unless p.include?(stmt.predicate)}
       p
+    end
+    
+    def statements
+      stmts = []
+      @graph.query(:subject=>self, :predicate=>p).each {|stmt| stmts << stmt}   
+      stmts
+    end
+    
+    def object_of
+      subjects = []
+      @graph.query(:object=>self).each do |stmt|
+        s = stmt.subject
+        s.extend(RDF::RDFObjects::Resource)
+        s.graph = @graph
+        subjects << s
+      end
+      subjects
     end
     
     def properties
       results = {}
       @graph.query(:subject=>self).each do |r| 
         if r.object.is_a?(RDF::Resource)
-          r.object.extend(RDF::RDFObjects::Resource)
-          r.object.graph = self.graph
+          r.object.graph = self.graph unless r.object.frozen?
         end
         results[r.predicate] ||=[]
         results[r.predicate] << r.object
@@ -133,10 +161,10 @@ module RDF::RDFObjects
       when 0 then nil
       else
         results.each_pair do |pred, objs|
-          objs.each do |o|
-            o.extend(ObjectSet)
-            o.set_statement(Statement.new(self, pred, o))
-          end
+          #objs.each do |o|
+            objs.extend(ObjectSet)
+            objs.set_statement(RDF::Statement.new(self, pred, ""))
+          #end
           #results[pred] = objs.first if objs.length == 1
           results
         end
