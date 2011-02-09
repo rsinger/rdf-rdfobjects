@@ -6,7 +6,7 @@ module RDF::RDFObjects
         next unless object
         @subject.push(@predicate, object)
       end
-      @subject[@predicate]
+      self.replace(@subject[@predicate])
     end
     
     def set_statement(stmt)
