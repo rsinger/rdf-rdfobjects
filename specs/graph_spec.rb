@@ -65,4 +65,14 @@ describe "An RDF-RDFObject Graph" do
   it "should produce a string when .to_ntriples is called" do
     @graph.to_ntriples.should be_kind_of(String)
   end
+  
+  it "should set the graph attribute for every RDF::Resource in the graph" do
+    @graph.each_triple do |s,p,o|
+      s.should respond_to(:graph)
+      s.graph.should ==(@graph)
+      o.should respond_to(:graph) if o.is_a?(RDF::Resource)
+      o.graph.should ==(@graph) if o.is_a?(RDF::Resource)
+    end
+    
+  end
 end

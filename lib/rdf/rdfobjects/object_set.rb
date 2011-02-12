@@ -21,7 +21,7 @@ module RDF::RDFObjects
       ary.each do |i|
         @subject.push(@predicate, i)
       end
-      super(ary)
+      self.replace(@subject[@predicate])
     end
     
     def delete(o)

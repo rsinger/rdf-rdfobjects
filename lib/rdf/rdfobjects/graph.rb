@@ -32,5 +32,31 @@ module RDF::RDFObjects
         super(data)
       end
     end
+ 
+    def insert_statement(statement)
+      statement = statement.dup
+      statement.context = context
+      statement.each_triple.each do |s,p,o|
+        puts s.to_s
+        s.graph = self if s.is_a?(RDF::Resource)
+      end      
+      @data.insert(statement)
+    end    
   end      
 end
+
+module RDF
+  class Graph
+    def insert_statement(statement)
+      statement = statement.dup
+      statement.context = context
+      statement.to_triple.each_cons(3) do |s,p,o|
+        s.graph = self
+        o.graph = self if o.is_a?(RDF::Resource)
+      end      
+      @data.insert(statement)
+    end      
+  end
+end
+
+
