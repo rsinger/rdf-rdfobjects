@@ -52,7 +52,7 @@ module RDF
       statement.context = context
       statement.to_triple.each_cons(3) do |s,p,o|
         s.graph = self
-        o.graph = self if o.is_a?(RDF::Resource)
+        o.graph = self if o.is_a?(RDF::Resource) && !o.frozen?
       end      
       @data.insert(statement)
     end      
