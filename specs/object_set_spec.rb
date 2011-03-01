@@ -71,4 +71,59 @@ describe "An RDF-RDFObject ObjectSet" do
     foo.should be_true
     bar.should be_true
   end
+  
+  it "should affect the graph and self when #delete is called" do
+    u = @graph['http://example.org/resource1']
+    prop = u['http://example.org/property']
+    prop.should_not include(RDF::URI.intern('http://example.org/foo'))
+    prop << RDF::URI.intern('http://example.org/foo')
+    prop.should include(RDF::URI.intern('http://example.org/foo'))
+    prop.delete(RDF::URI.intern('http://example.org/foo'))
+    prop.should_not include(RDF::URI.intern('http://example.org/foo'))
+    query = RDF::Query::Pattern.new(:subject=>u, :predicate=>RDF::URI.intern('http://example.org/property'))
+    foo = false
+    @graph.query(query).each do |stmt|
+      foo = true if stmt.object == RDF::URI.intern('http://example.org/foo')    
+    end
+    foo.should_not be_true
+  end
+  
+  it "should affect the graph and self when #delete_at() is called" do
+    u = @graph['http://example.org/resource1']
+    prop = u['http://example.org/property']
+    prop.should_not include(RDF::URI.intern('http://example.org/bar'))
+    prop << RDF::URI.intern('http://example.org/foo')
+    prop << RDF::URI.intern('http://example.org/bar')    
+    prop << RDF::URI.intern('http://example.org/baz')    
+    prop.length.should ==(4)
+    prop.index(RDF::URI.intern('http://example.org/bar')).should == 2
+    prop.delete(RDF::URI.intern('http://example.org/bar'))
+    prop.should_not include(RDF::URI.intern('http://example.org/bar'))
+    query = RDF::Query::Pattern.new(:subject=>u, :predicate=>RDF::URI.intern('http://example.org/property'))
+    bar = false
+    @graph.query(query).each do |stmt|
+      foo = true if stmt.object == RDF::URI.intern('http://example.org/bar')    
+    end
+    bar.should_not be_true
+  end  
+  
+  it "should remain an ObjectSet even if an Array is passed to #replace()" do
+    u = @graph['http://example.org/resource1']
+    prop = u['http://example.org/property']    
+    dup_prop = prop.dup
+    dup_prop.should ==(prop)
+    ary = [RDF::URI.intern("http://example.org/fooBar"), RDF::URI.intern("http://example.org/fooBaz")]
+    prop.replace(ary)
+    dup_prop.should_not ==(prop)
+    prop.should ==(ary)
+    prop.should be_kind_of(RDF::RDFObjects::ObjectSet)
+  end
+  
+  it "should ensure that values passed via #replace have #graph set" do
+    u = @graph['http://example.org/resource1']
+    prop = u['http://example.org/property'] 
+    prop.replace([RDF::URI.intern("http://example.org/fooBar"), RDF::URI.intern("http://example.org/fooBaz")])   
+    prop.first.graph.should ==(@graph)
+    prop.last.graph.should ==(@graph)
+  end
 end

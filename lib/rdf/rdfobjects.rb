@@ -2,11 +2,11 @@ require 'rdf' # @see http://rubygems.org/gems/rdf
 
 module RDF
   module RDFObjects
-    autoload :VERSION, 'rdf/rdfobjects/version'
-    autoload :AssertionSet, 'rdf/rdfobjects/assertion_set'
-    autoload :Graph, 'rdf/rdfobjects/graph'
-    autoload :ObjectSet, 'rdf/rdfobjects/object_set'
-    autoload :Resource, 'rdf/rdfobjects/resource'
+    autoload :VERSION, File.dirname(__FILE__) + '/rdfobjects/version'
+    autoload :AssertionSet, File.dirname(__FILE__) + '/rdfobjects/assertion_set'
+    autoload :Graph, File.dirname(__FILE__) + '/rdfobjects/graph'
+    autoload :ObjectSet, File.dirname(__FILE__) + '/rdfobjects/object_set'
+    autoload :Resource, File.dirname(__FILE__) + '/rdfobjects/resource'
   end
   class URI
     include RDFObjects::Resource

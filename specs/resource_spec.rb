@@ -167,6 +167,21 @@ describe "An RDF::RDFObjects::Resource" do
     uri[RDF.type].should be_empty
   end
   
+  it "should return the deleted statements from #remove()" do
+    uri = @graph['http://example.org/resource1']
+    uri[RDF.type]= RDF::FOAF.Person
+    person = uri.remove("http://www.w3.org/1999/02/22-rdf-syntax-ns#type", RDF::FOAF.Person)
+    person.should be_kind_of(RDF::Statement)
+    person.object.should ==(RDF::FOAF.Person)
+    uri[RDF::FOAF.name]= ["Robert Zimmerman", "Bob Dylan", "Lucky Wilbury"]    
+    names = uri.remove(RDF::FOAF.name)    
+    names.should be_kind_of(Array)
+    names.length.should ==(3)
+    names.first.should be_kind_of(RDF::Statement)
+    names.last.should be_kind_of(RDF::Statement)
+    names.first.predicate.should ==(RDF::FOAF.name)
+  end  
+  
   it "should allow a statement to be added to the graph with #push()" do
     uri = @graph['http://example.org/resource1']
     uri[RDF::FOAF.name]= "Robert Zimmerman"

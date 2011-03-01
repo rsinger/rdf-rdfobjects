@@ -105,11 +105,21 @@ module RDF::RDFObjects
     
     def remove(p, o=nil)
       p = RDF::URI.intern(p) unless p.is_a?(RDF::URI)
+      removals = []
       if o
         o = cast_as_typed_object(o)
-        @graph.query(:subject=>self, :predicate=>p, :object=>o).each {|stmt| @graph.delete(stmt)}
+        query = {:subject=>self, :predicate=>p, :object=>o}
       else
-        @graph.query(:subject=>self, :predicate=>p).each {|stmt| @graph.delete(stmt)}
+        query = {:subject=>self, :predicate=>p}
+      end
+      @graph.query(query).each do |stmt| 
+        removals << stmt
+        @graph.delete(stmt)
+      end      
+      if o
+        removals.first
+      else
+        removals
       end
     end
 
