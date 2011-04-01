@@ -98,9 +98,17 @@ module RDF::RDFObjects
       @graph.query(:subject=>self, :predicate=>p).each {|stmt| @graph.delete(stmt)}    
       [*o].each do |obj|
         next unless obj
-        obj = cast_as_typed_object(obj)           
+        obj = cast_as_typed_object(obj)        
+        if obj.is_a?(RDF::Resource) && !obj.frozen?
+          obj.graph = @graph
+        elsif obj.is_a?(RDF::Resource) && obj.frozen? && obj.graph != @graph
+          obj = RDF::URI.new(obj)
+          obj.graph = @graph
+          obj.freeze
+        end
         @graph << [self, p, obj] unless obj.nil?
       end
+      self[p]
     end
     
     def remove(p, o=nil)

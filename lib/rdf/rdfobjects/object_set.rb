@@ -42,8 +42,8 @@ module RDF::RDFObjects
       @subject[@predicate]
     end
     def replace(ary)
-      @subject[@predicate]=ary
-      super(ary)  
+      obj_set=@subject[@predicate]=ary
+      super(obj_set)  
     end  
     
     def insert(index, *obj)
